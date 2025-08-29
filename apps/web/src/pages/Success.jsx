@@ -4,25 +4,48 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 const Success = () => {
-  const { user, setUser } = useAuth();
+  const { user, setUser, refresh } = useAuth();
   const navigate = useNavigate();
+  // useEffect(() => {
+  //   const markPremium = async () => {
+  //     try {
+  //       const res = await fetch('http://localhost:1617/api/me/subscribe-premium', {
+  //         method: 'POST',
+  //         credentials: 'include',
+  //       });
+  //       const data = await res.json();
+  //       setUser({ ...user, subscription: data.subscription });
+  //       navigate('/'); 
+  //     } catch (err) {
+  //       console.error(err);
+  //     }
+  //   };
+  //   markPremium();
+  // }, []);
   useEffect(() => {
-    const markPremium = async () => {
-      try {
-        const res = await fetch('http://localhost:1096/backend/me/subscribe-premium', {
-          method: 'POST',
-          credentials: 'include',
-        });
-        const data = await res.json();
-        setUser({ ...user, subscription: data.subscription });
-        navigate('/'); 
-      } catch (err) {
-        console.error(err);
-      }
+  const markPremium = async () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionId = urlParams.get("session_id");
+    if (!sessionId) return;
+
+    // Get Stripe session details from api
+    const res = await fetch(`http://localhost:1617/api/stripe/get-session-details?sessionId=${sessionId}`);
+    const { subscriptionId } = await res.json();
+
+    // Call subscribe-premium with subscriptionId
+    await fetch('http://localhost:1617/api/me/subscribe-premium', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subscriptionId })
+    });
+    // ...existing code...
+    await refresh(); // This will update user info in context
+    navigate('/');   // Go to Home page
     };
     markPremium();
   }, []);
-  
+    
   //return <h1>Payment Successful! Redirecting...</h1>;
 
   return (
