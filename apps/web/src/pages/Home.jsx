@@ -5,13 +5,19 @@ import { useAuth } from '../context/AuthContext';
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
+  const { user, loading, cancelPremium } = useAuth();
 
-  
-  const currentPlan = user?.subscription?.plan || 'none';
+  // Always use latest user data for plan
+  const currentPlan =
+    user?.subscription?.plan === 'premium'
+      ? 'premium'
+      : user?.subscription?.plan === 'free'
+      ? 'free'
+      : 'none';
 
-//redirect to pricing if first time login 
+  // Redirect to pricing if first time login
   useEffect(() => {
     if (!loading && user && user.planSet === false && user.role !== 'admin') {
       navigate('/pricing');
@@ -21,6 +27,18 @@ export default function Home() {
   const handleUpgradeClick = () => {
     if (user?.role !== 'admin') {
       navigate('/pricing');
+    }
+  };
+
+  // Custom cancel handler to show error nicely
+  const handleCancelPremium = async () => {
+    try {
+      const msg = await cancelPremium();
+      setErrorMsg(msg);
+    } catch (err) {
+      setErrorMsg(err.message || 'Failed to cancel subscription.');
+    } finally {
+      setTimeout(() => setErrorMsg(''), 3000);
     }
   };
 
@@ -52,7 +70,6 @@ export default function Home() {
     { title: 'Housing', description: 'Find student accommodation', icon: '🏠', path: '/housing', color: 'from-green-500 to-green-600' },
     { title: 'Bookmarks', description: 'Your saved guides and resources', icon: '🔖', path: '/bookmarks', color: 'from-yellow-500 to-yellow-600' }
   ];
-
 
   const getStudyFieldsWithIcons = () => {
     const programs = getAllPrograms();
@@ -112,39 +129,69 @@ export default function Home() {
 
         {/* Plan Banner: hide completely for admins */}
         {user && user.role !== 'admin' && user.planSet !== false && (
-          <div
-            className={`p-4 rounded-xl text-white font-semibold text-center ${
-              currentPlan === 'premium' ? 'bg-purple-600' : 'bg-green-600'
-            }`}
-          >
-            {currentPlan === 'premium' ? (
-              <>
-                Premium Plan
-                <button
-                  onClick={handleUpgradeClick}
-                  className="ml-4 px-4 py-1 bg-white text-purple-700 rounded-lg font-medium hover:bg-gray-100 transition-colors"
-                >
-                  Manage / Cancel
-                </button>
-              </>
-            ) : (
-              <>
-                Free Plan
-                <button
-                  onClick={handleUpgradeClick}
-                  className="ml-4 px-4 py-1 bg-white text-green-700 rounded-lg font-medium hover:bg-gray-100 transition-colors"
-                >
-                  Upgrade to Premium
-                </button>
-              </>
+          <div className="flex flex-col items-center justify-center my-6">
+            {errorMsg && (
+              <div className="mb-2 px-6 py-3 rounded-xl bg-red-600 text-white font-semibold shadow-lg animate-fade-in-out">
+                {errorMsg}
+              </div>
             )}
+            <div
+              className={`flex items-center gap-4 px-6 py-3 rounded-2xl shadow-lg font-semibold text-lg transition-all duration-300 border-2 ${
+                currentPlan === 'premium'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-400'
+                  : 'bg-gradient-to-r from-green-500 to-blue-500 text-white border-green-400'
+              }`}
+            >
+              {currentPlan === 'premium' ? (
+                <>
+                  <span className="inline-flex items-center gap-2">
+                    <span className="text-2xl">🌟</span>
+                    <span>Premium Plan Active</span>
+                  </span>
+                  <button
+                    onClick={handleCancelPremium}
+                    className="ml-6 px-4 py-2 bg-white text-purple-700 rounded-lg font-bold shadow hover:bg-purple-50 transition-colors border border-purple-300"
+                  >
+                    Cancel Premium
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="inline-flex items-center gap-2">
+                    <span className="text-2xl">🟢</span>
+                    <span>Free Plan</span>
+                  </span>
+                  <button
+                    onClick={handleUpgradeClick}
+                    className="ml-6 px-4 py-2 bg-white text-green-700 rounded-lg font-bold shadow hover:bg-green-50 transition-colors border border-green-300"
+                  >
+                    Upgrade to Premium
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         )}
+
+        {/* Add fade-in-out animation for error */}
+        <style>{`
+          @keyframes fade-in-out {
+            0% { opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { opacity: 0; }
+          }
+          .animate-fade-in-out {
+            animation: fade-in-out 3s linear;
+          }
+        `}</style>
 
         {/* Hero Section */}
         <div className="hero-section rounded-3xl p-12 relative overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700">
           <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-white/10 to-transparent">
-            <div className="absolute top-4 right-4 text-6xl opacity-20">🗽🏛️⛪🗼🏛️</div>
+            <div className="absolute top-4 right-4 text-6xl opacity-20">
+              🗽🏛️⛪🗼🏛️
+            </div>
           </div>
           <div className="relative z-10 max-w-3xl">
             <div className="flex items-center gap-3 mb-6">
@@ -196,8 +243,15 @@ export default function Home() {
                     <div className={`w-16 h-16 bg-gradient-to-r ${link.color} rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
                       <span className="text-2xl text-white">{link.icon}</span>
                     </div>
-                    <h3 className="text-xl font-bold text-gray-800 mb-2 group-hover:text-blue-600 transition-colors">{link.title}</h3>
-                    <p className="text-gray-600 text-sm">{link.description}</p>
+                    <h3 className="text-xl font-bold text-gray-800 mb-2 group-hover:text-blue-600 transition-colors">
+                      {link.title}
+                    </h3>
+                    <p className="text-gray-600 text-sm">
+                      {link.description}
+                    </p>
+                    {/* {!user && (
+                      <p className="text-xs text-red-500 mt-2">Login required</p>
+                    )} */}
                   </div>
                 );
               }
@@ -211,8 +265,12 @@ export default function Home() {
                   <div className={`w-16 h-16 bg-gradient-to-r ${link.color} rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
                     <span className="text-2xl text-white">{link.icon}</span>
                   </div>
-                  <h3 className="text-xl font-bold text-gray-800 mb-2 group-hover:text-blue-600 transition-colors">{link.title}</h3>
-                  <p className="text-gray-600 text-sm">{link.description}</p>
+                  <h3 className="text-xl font-bold text-gray-800 mb-2 group-hover:text-blue-600 transition-colors">
+                    {link.title}
+                  </h3>
+                  <p className="text-gray-600 text-sm">
+                    {link.description}
+                  </p>
                 </Link>
               );
             })}
@@ -298,5 +356,5 @@ export default function Home() {
         </div>
       </div>
     </div>
-  )
+  );
 }
