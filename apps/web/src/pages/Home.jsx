@@ -1,46 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getCountries, getAllPrograms } from '../constants/guideData';
 import { useAuth } from '../context/AuthContext';
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [errorMsg, setErrorMsg] = useState('');
   const navigate = useNavigate();
-  const { user, loading, cancelPremium } = useAuth();
-
-  // Always use latest user data for plan
-  const currentPlan =
-    user?.subscription?.plan === 'premium'
-      ? 'premium'
-      : user?.subscription?.plan === 'free'
-      ? 'free'
-      : 'none';
-
-  // Redirect to pricing if first time login
-  useEffect(() => {
-    if (!loading && user && user.planSet === false && user.role !== 'admin') {
-      navigate('/pricing');
-    }
-  }, [user, loading, navigate]);
-
-  const handleUpgradeClick = () => {
-    if (user?.role !== 'admin') {
-      navigate('/pricing');
-    }
-  };
-
-  // Custom cancel handler to show error nicely
-  const handleCancelPremium = async () => {
-    try {
-      const msg = await cancelPremium();
-      setErrorMsg(msg);
-    } catch (err) {
-      setErrorMsg(err.message || 'Failed to cancel subscription.');
-    } finally {
-      setTimeout(() => setErrorMsg(''), 3000);
-    }
-  };
+  const { user } = useAuth();
 
   const handleSearch = () => {
     if (searchQuery.trim()) {
@@ -53,7 +19,9 @@ export default function Home() {
   };
 
   const handleKeyPress = (e) => {
-    if (e.key === 'Enter') handleSearch();
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
   };
 
   const handleGuideNavigation = (url) => {
@@ -65,12 +33,37 @@ export default function Home() {
   };
 
   const quickLinks = [
-    { title: 'Study Guides', description: 'SOP & VISA guides for international students', icon: '📚', path: '/guides', color: 'from-blue-500 to-blue-600' },
-    { title: 'Universities', description: 'Explore top universities worldwide', icon: '🏫', path: '/universities', color: 'from-purple-500 to-purple-600' },
-    { title: 'Housing', description: 'Find student accommodation', icon: '🏠', path: '/housing', color: 'from-green-500 to-green-600' },
-    { title: 'Bookmarks', description: 'Your saved guides and resources', icon: '🔖', path: '/bookmarks', color: 'from-yellow-500 to-yellow-600' }
+    {
+      title: 'Study Guides',
+      description: 'SOP & VISA guides for international students',
+      icon: '📚',
+      path: '/guides',
+      color: 'from-blue-500 to-blue-600'
+    },
+    {
+      title: 'Universities',
+      description: 'Explore top universities worldwide',
+      icon: '🏫',
+      path: '/universities',
+      color: 'from-purple-500 to-purple-600'
+    },
+    {
+      title: 'Housing',
+      description: 'Find student accommodation',
+      icon: '🏠',
+      path: '/housing',
+      color: 'from-green-500 to-green-600'
+    },
+    {
+      title: 'Bookmarks',
+      description: 'Your saved guides and resources',
+      icon: '🔖',
+      path: '/bookmarks',
+      color: 'from-yellow-500 to-yellow-600'
+    }
   ];
 
+  // Get study fields from guideData with icons
   const getStudyFieldsWithIcons = () => {
     const programs = getAllPrograms();
     const iconMap = {
@@ -96,6 +89,7 @@ export default function Home() {
       'Robotics': '🤖',
       'Statistics': '📊'
     };
+    
     return programs.slice(0, 9).map(program => ({
       name: program,
       icon: iconMap[program] || '🎓'
@@ -104,14 +98,32 @@ export default function Home() {
 
   const studyFields = getStudyFieldsWithIcons();
 
+  // Get countries from guideData with additional info
   const getFeaturedCountries = () => {
     const countries = getCountries();
     const countryInfo = {
-      'United States': { flag: '🇺🇸', universities: 'Harvard, MIT, Stanford, Carnegie Mellon', description: 'Top universities and diverse programs' },
-      'United Kingdom': { flag: '🇬🇧', universities: 'Oxford, Cambridge', description: 'Historic institutions and research excellence' },
-      'Canada': { flag: '🇨🇦', universities: 'Toronto, Waterloo', description: 'Quality education and immigration opportunities' },
-      'Australia': { flag: '🇦🇺', universities: 'Melbourne, ANU', description: 'High living standards and work opportunities' }
+      'United States': {
+        flag: '🇺🇸',
+        universities: 'Harvard, MIT, Stanford, Carnegie Mellon',
+        description: 'Top universities and diverse programs'
+      },
+      'United Kingdom': {
+        flag: '🇬🇧',
+        universities: 'Oxford, Cambridge',
+        description: 'Historic institutions and research excellence'
+      },
+      'Canada': {
+        flag: '🇨🇦',
+        universities: 'Toronto, Waterloo',
+        description: 'Quality education and immigration opportunities'
+      },
+      'Australia': {
+        flag: '🇦🇺',
+        universities: 'Melbourne, ANU',
+        description: 'High living standards and work opportunities'
+      }
     };
+
     return countries.map((country, index) => ({
       id: index + 1,
       name: country,
@@ -126,66 +138,6 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="max-w-7xl mx-auto px-4 py-8 space-y-12">
-
-        {/* Plan Banner: hide completely for admins */}
-        {user && user.role !== 'admin' && user.planSet !== false && (
-          <div className="flex flex-col items-center justify-center my-6">
-            {errorMsg && (
-              <div className="mb-2 px-6 py-3 rounded-xl bg-red-600 text-white font-semibold shadow-lg animate-fade-in-out">
-                {errorMsg}
-              </div>
-            )}
-            <div
-              className={`flex items-center gap-4 px-6 py-3 rounded-2xl shadow-lg font-semibold text-lg transition-all duration-300 border-2 ${
-                currentPlan === 'premium'
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-400'
-                  : 'bg-gradient-to-r from-green-500 to-blue-500 text-white border-green-400'
-              }`}
-            >
-              {currentPlan === 'premium' ? (
-                <>
-                  <span className="inline-flex items-center gap-2">
-                    <span className="text-2xl">🌟</span>
-                    <span>Premium Plan Active</span>
-                  </span>
-                  <button
-                    onClick={handleCancelPremium}
-                    className="ml-6 px-4 py-2 bg-white text-purple-700 rounded-lg font-bold shadow hover:bg-purple-50 transition-colors border border-purple-300"
-                  >
-                    Cancel Premium
-                  </button>
-                </>
-              ) : (
-                <>
-                  <span className="inline-flex items-center gap-2">
-                    <span className="text-2xl">🟢</span>
-                    <span>Free Plan</span>
-                  </span>
-                  <button
-                    onClick={handleUpgradeClick}
-                    className="ml-6 px-4 py-2 bg-white text-green-700 rounded-lg font-bold shadow hover:bg-green-50 transition-colors border border-green-300"
-                  >
-                    Upgrade to Premium
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Add fade-in-out animation for error */}
-        <style>{`
-          @keyframes fade-in-out {
-            0% { opacity: 0; }
-            10% { opacity: 1; }
-            90% { opacity: 1; }
-            100% { opacity: 0; }
-          }
-          .animate-fade-in-out {
-            animation: fade-in-out 3s linear;
-          }
-        `}</style>
-
         {/* Hero Section */}
         <div className="hero-section rounded-3xl p-12 relative overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700">
           <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-white/10 to-transparent">
@@ -201,7 +153,7 @@ export default function Home() {
             <p className="text-xl mb-8 text-white/90 leading-relaxed">
               Your gateway to international education. Find the perfect university, get expert guidance, and make your study abroad dreams a reality.
             </p>
-
+            
             {/* Search Bar */}
             <div className="bg-white rounded-2xl p-3 shadow-2xl">
               <div className="flex items-center">
@@ -212,9 +164,9 @@ export default function Home() {
                   className="flex-1 border-none outline-none p-4 text-lg bg-transparent placeholder-gray-500 text-gray-800"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={handleKeyPress}
+                  onKeyPress={handleKeyPress}
                 />
-                <button
+                <button 
                   onClick={handleSearch}
                   className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 font-medium"
                 >
@@ -225,7 +177,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Quick Links */}
+        {/* Quick Links Section */}
         <div className="space-y-6">
           <div className="text-center">
             <h2 className="text-3xl font-bold text-gray-800 mb-2">Explore AbroadEase</h2>
@@ -255,7 +207,7 @@ export default function Home() {
                   </div>
                 );
               }
-
+              
               return (
                 <Link
                   key={link.path}
@@ -296,6 +248,9 @@ export default function Home() {
                 <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">
                   {field.name}
                 </span>
+               {/*  {!user && (
+                  <p className="text-xs text-red-500 mt-1">Login required</p>
+                )} */}
               </div>
             ))}
           </div>
@@ -327,6 +282,9 @@ export default function Home() {
                   <p className="text-sm text-gray-600">
                     {country.description}
                   </p>
+                  {/* {!user && (
+                    <p className="text-xs text-red-500 mt-2">Login required</p>
+                  )} */}
                 </div>
               </div>
             ))}
@@ -356,5 +314,5 @@ export default function Home() {
         </div>
       </div>
     </div>
-  );
+  )
 }

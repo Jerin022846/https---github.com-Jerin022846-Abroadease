@@ -17,8 +17,8 @@ const plans = [
     key: "premium",
     price: 15,
     features: [
-      "Access to all features",
-      //"Full access to Housing information",
+      "Unlimited access to features",
+      "Unlimited access to Housing information",
       "Completely Ad-Free",
       "Regular updates",
     ],
