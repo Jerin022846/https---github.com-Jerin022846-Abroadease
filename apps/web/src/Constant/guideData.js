@@ -1,5 +1,5 @@
 // Relational data structure for guides
-
+//
 export const GUIDE_DATA = {
   'United States': {
     universities: {
