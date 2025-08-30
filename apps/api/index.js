@@ -5,8 +5,6 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import bodyParser from "body-parser";
-
 import bcrypt from 'bcryptjs';
 
 const app = express();
@@ -16,11 +14,6 @@ const FRONTEND_ORIGIN = process.env.FRONTEND_URL || 'http://localhost:5173';
 app.use(cors({ origin: FRONTEND_ORIGIN, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
-app.use(express.json({ limit: "50mb" }));
-app.use(express.urlencoded({ extended: true, limit: "50mb" }));
-app.use(bodyParser.json({ limit: "50mb" }));
-app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
-
 
 // --- Stripe Routes ---
 import stripeRoutes from './routes/stripe.js';
@@ -85,8 +78,6 @@ import bookmarkRoutes from './routes/bookmark.js';
 import notificationRoutes from './routes/notification.js';
 import adminRoutes from './routes/admin.js';
 import testRoutes from './routes/test.js';
-import path from 'path';
-import meRouter from './routes/user.js';
 import visaRoutes from './routes/visa.js';
 
 // --- Health ---
@@ -102,9 +93,6 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api', testRoutes);
 app.use('/api/visas', visaRoutes);
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
-app.use('/api/me', meRouter);
-
 // if you have it:
 // app.use('/api', contactRequestRoutes);
 
